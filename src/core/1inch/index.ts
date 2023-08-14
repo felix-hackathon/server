@@ -16,7 +16,7 @@ const fetcher1Inch = async (path = '', method = 'GET') => {
 		})
 		.catch((error) => {
 			console.log(error)
-			throw new Exception(error.response.status, error.response.statusText)
+			throw new Exception(error.response.data?.statusCode || error.response.status, error.response.data?.description || error.response.statusText)
 		})
 
 	return res

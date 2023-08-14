@@ -42,9 +42,12 @@ export default class SwapService {
 	}
 
 	static async quote(chainId: number, payload) {
-		const res = await axios.get(`${AppConfig.uri1Inch}/${chainId}/quote?${stringify(payload)}`).catch((error) => {
-			throw new Exception(error.response.status, error.response.statusText)
-		})
+		const res = await fetcher1Inch(`/swap/v5.2/${chainId}/quote?${stringify(payload)}`)
+		return res?.data
+	}
+
+	static async swap(chainId: number, payload) {
+		const res = await fetcher1Inch(`/swap/v5.2/${chainId}/swap?${stringify(payload)}`)
 		return res?.data
 	}
 }
