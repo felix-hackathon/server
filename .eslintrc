@@ -1,0 +1,41 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-extra-semi": "off",
+    "no-case-declarations": "off",
+//     enable additional rules
+//    "indent": ["warn", 2],
+    "linebreak-style": ["warn", "unix"],
+//    "quotes": ["warn", "double"],
+//    "semi": ["warn", "always"],
+
+    // override configuration set by extending "eslint:recommended"
+    "no-empty": "warn",
+    "no-cond-assign": ["warn", "always"],
+
+    // disable rules from base configurations
+    "for-direction": "off",
+
+    "comma-dangle": [
+      "warn",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "never",
+        "exports": "never",
+        "functions": "never"
+      }
+    ]
+//    "max-len": ["warn", { "code": 150 }]
+  }
+}
