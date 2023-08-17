@@ -8,7 +8,7 @@ export class GetSignNonceQuery {
 
 export class SignInPayload {
 	@JoiSchema(Joi.string().optional())
-	message?: string
+	address?: string
 
 	@JoiSchema(Joi.string().optional())
 	signature?: string

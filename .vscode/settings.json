@@ -1,13 +1,7 @@
 {
 	"prettier.insertPragma": true,
 	"editor.formatOnSave": true,
-	"cSpell.words": [
-		"Bodys",
-		"createclaim",
-		"gacha",
-		"INFT",
-		"IPFS",
-		"NFTCACHEKEY",
-		"rpcs"
-	]
+	"editor.codeActionsOnSave": {
+		"source.removeUnusedImports": true
+	}
 }

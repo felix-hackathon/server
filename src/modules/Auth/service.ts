@@ -1,10 +1,12 @@
 import UserModel, { IUserDoc } from 'models/User'
-import { SiweMessage, generateNonce } from 'siwe'
 import { SignInPayload } from './type'
 import Exception from '@/core/exception'
 import jwt from 'jsonwebtoken'
 import { ethers } from 'ethers'
 import AppConfig from '@/core/configs'
+import { generateId } from '@/core/utils'
+import Caver from 'caver-js'
+import Logger from '@/core/logger'
 
 // expired in 5 minutes
 const expiredTime = 300000
@@ -13,64 +15,70 @@ export default class AuthService {
 	static async getSignNonce(address: string) {
 		let user = await UserModel.findOne({ address: address?.toLowerCase() })
 		const now = new Date()
-		const nonceSign = generateNonce()
+		const message = `
+		Welcome to FireFly!
+
+		Click to sign in and accept the FireFly Terms of Service and Privacy Policy.
+
+		This request will not trigger a blockchain transaction or cost any gas fees.
+
+		Wallet address:
+		${address}
+
+		Nonce:
+		${generateId(20)}
+		`
 
 		if (user) {
-			if (!user.nonceSignCreatedAt || user?.nonceSignCreatedAt?.getTime() + expiredTime <= now.getTime()) {
+			if (!user.messageCreatedAt || user?.messageCreatedAt?.getTime() + expiredTime <= now.getTime()) {
 				user.accessToken = null
 				user.refreshToken = null
-				user.nonceSign = nonceSign
-				user.nonceSignCreatedAt = now
+				user.message = message
+				user.messageCreatedAt = now
 			} else {
 				return {
-					nonce: user.nonceSign,
-					createdAt: user.nonceSignCreatedAt,
+					message: user.message,
 				}
 			}
 		} else {
 			user = new UserModel({
 				address: address?.toLowerCase(),
-				nonceSign,
-				nonceSignCreatedAt: now,
+				message,
+				messageCreatedAt: now,
 				accessToken: null,
 				refreshToken: null,
 			})
 		}
 		await user.save()
 		return {
-			nonce: user.nonceSign,
-			createdAt: user.nonceSignCreatedAt,
+			message: user.message,
 		}
 	}
 
-	static async signIn({ signature, message }: SignInPayload, affiliate: boolean = false) {
+	static async signIn({ signature, address }: SignInPayload) {
 		const now = new Date()
 		let user: IUserDoc
-		const siweMessage = new SiweMessage(message)
-		user = await UserModel.findOne({ address: siweMessage.address.toLowerCase() })
-
+		user = await UserModel.findOne({ address: address.toLowerCase() })
 		if (!user) {
-			throw Exception.NotFound(`User ${message} not found`)
+			throw Exception.NotFound(`User ${address} not found`)
 		}
-		if (!user.nonceSignCreatedAt || !user.nonceSign) {
+		if (!user.messageCreatedAt || !user.message) {
 			throw Exception.BadRequest(`Cannot get sign data`)
 		}
-		if (user.nonceSignCreatedAt.getTime() + expiredTime <= now.getTime()) {
+		if (user.messageCreatedAt.getTime() + expiredTime <= now.getTime()) {
 			throw Exception.BadRequest('Sign data expired')
 		}
 
-		const valid = await siweMessage
-			.verify({
-				signature,
-			})
-			.then(() => true)
-			.catch(() => false)
-		if (!valid) {
+		const caver = new Caver()
+		const recovered = caver.utils.recover(user.message, caver.utils.decodeSignature(signature))
+
+		if (recovered.toLowerCase() !== user.address) {
+			Logger.error(`Recover address ${recovered} || Expected: ${user.address}`)
 			throw Exception.BadRequest('Signature invalid')
 		}
 
-		user.nonceSign = null
-		user.nonceSignCreatedAt = null
+		user.message = null
+		user.messageCreatedAt = null
 		user.accessToken = this.createAccessToken(user)
 		user.refreshToken = this.createRefreshToken(user)
 		await user.save()

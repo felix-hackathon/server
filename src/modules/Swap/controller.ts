@@ -26,4 +26,10 @@ export default class SwapController {
 	async quote(@Params('chainId') chainId: number, @Query() payload) {
 		return SwapService.quote(chainId, payload)
 	}
+
+	@Get('/')
+	@ParamsValidation(ChainIdParams)
+	async swap(@Params('chainId') chainId: number, @Query() payload) {
+		return SwapService.swap(chainId, payload)
+	}
 }
