@@ -72,6 +72,47 @@ export default class AuthService {
 		const caver = new Caver()
 		const recovered = caver.utils.recover(user.message, caver.utils.decodeSignature(signature))
 
+		// test start
+		function coverInitialTxValue(tx) {
+			if (typeof tx !== 'object') throw new Error('Invalid transaction')
+			if (!tx.senderRawTransaction && (!tx.type || tx.type === 'LEGACY' || tx.type.includes('SMART_CONTRACT_DEPLOY'))) {
+				tx.to = tx.to || '0x'
+				tx.data = caver.utils.addHexPrefix(tx.data || '0x')
+			}
+			tx.chainId = caver.utils.numberToHex(tx.chainId)
+			return tx
+		}
+
+		const transaction = coverInitialTxValue({
+			from: '0xc95c0ec40937ad81f34c8b0836680b7681b7bf60',
+			to: '0x234234111254eeb25477b68fb85ed929f73a960582',
+			value: '0xde0b6b3a7640000',
+			data: '0x12aa3caf000000000000000000000000b553654e5d94cd4e3b451248a8c941ebff5327ac000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000ff3e7cf0c007f919807b32b30a4a9e7bd7bc4121000000000000000000000000b553654e5d94cd4e3b451248a8c941ebff5327ac000000000000000000000000c95c0ec40937ad81f34c8b0836680b7681b7bf600000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000c7d713b49da00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006600000000000000000000000000000000000000000000000000004800001a4060ff3e7cf0c007f919807b32b30a4a9e7bd7bc4121d0e30db080a06c4eca27ff3e7cf0c007f919807b32b30a4a9e7bd7bc41211111111254eeb25477b68fb85ed929f73a96058200000000000000000000000000000000000000000000000000008b1ccac8',
+			gas: '0x2a432',
+			type: 'FEE_DELEGATED_SMART_CONTRACT_EXECUTION',
+			chainId: 8217,
+			gasPrice: '0xba43b7400',
+			nonce: '0x15',
+		})
+		const rlpEncoded = caver.klay.accounts.encodeRLPByTxType(transaction)
+
+		const messageHash = ethers.keccak256(rlpEncoded)
+
+		const recovered2 = caver.utils.recover(
+			messageHash,
+			caver.utils.decodeSignature(
+				ethers.Signature.from({
+					v: '0x4056',
+					r: '0x36ab61de7301a053bc394716bedf942a9292f67ddef2fda5dd82d0a2ed2afb64',
+					s: '0x4bbc0df6f238c5bac4463c9a172378b8c8e6910e77d04edb92e1ef698235db06',
+				}).serialized
+			),
+			true
+		)
+		console.log('recovered2', recovered2)
+
+		// test end
+
 		if (recovered.toLowerCase() !== user.address) {
 			Logger.error(`Recover address ${recovered} || Expected: ${user.address}`)
 			throw Exception.BadRequest('Signature invalid')

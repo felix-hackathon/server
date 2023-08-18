@@ -1,9 +1,7 @@
 import fetcher1Inch from '@/core/1inch'
 import CacheService from '@/core/cache'
-import AppConfig from '@/core/configs'
 import SwapProtocolModel from '@/models/Swap/Protocol'
 import SwapTokenModel from '@/models/Swap/Token'
-import Caver from 'caver-js'
 import { stringify } from 'querystring'
 import AppService from '../App/service'
 import Exception from '@/core/exception'
@@ -53,17 +51,19 @@ export default class SwapService {
 		return res?.data
 	}
 	static async swap(chainId: number, { rawTx }: SwapPayload) {
+		console.log(rawTx)
 		const chains = await AppService.getChains()
 		const chain = await chains.find((i) => i.chainId === chainId)
 		if (!chain) {
 			throw Exception.BadRequest('Chain not found')
 		}
-		const caver = new Caver(chain.rpc[0])
-		caver.klay.accounts.wallet.add(AppConfig.callerKeys[0], '0xDF61031025A0f177314c10eB4bddF35B9E9bddd0')
-		const res = await caver.klay.sendTransaction({
-			senderRawTransaction: rawTx,
-			feePayer: '0xDF61031025A0f177314c10eB4bddF35B9E9bddd0',
-		})
-		return res
+		return
+		// const caver = new Caver(chain.rpc[0])
+		// caver.klay.accounts.wallet.add(AppConfig.callerKeys[0], '0xDF61031025A0f177314c10eB4bddF35B9E9bddd0')
+		// const res = await caver.klay.sendTransaction({
+		// 	senderRawTransaction: rawTx,
+		// 	feePayer: '0xDF61031025A0f177314c10eB4bddF35B9E9bddd0',
+		// })
+		// return res
 	}
 }
