@@ -27,6 +27,7 @@ export type IConfig = {
 	database?: {
 		uri: string
 	}
+	callerKeys?: string[]
 	redis?: {
 		prefix: string
 		host?: string
@@ -62,6 +63,7 @@ const configObjectSchema = Joi.object<IConfig>({
 	database: Joi.object({
 		uri: Joi.string().required(),
 	}).required(),
+	callerKeys: Joi.array().items(Joi.string().required()).required(),
 	redis: Joi.object({
 		prefix: Joi.string().required(),
 		host: Joi.string().allow('').optional(),

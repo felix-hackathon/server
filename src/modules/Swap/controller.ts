@@ -1,5 +1,5 @@
-import { Controller, Get, Params, ParamsValidation, Query } from '@/core/decorators'
-import { ChainIdParams } from './type'
+import { Controller, Get, Params, ParamsValidation, Payload, PayloadValidation, Post, Query } from '@/core/decorators'
+import { ChainIdParams, SwapPayload } from './type'
 import SwapService from './service'
 
 @Controller('/{chainId}/swap', 'Swap')
@@ -29,7 +29,14 @@ export default class SwapController {
 
 	@Get('/')
 	@ParamsValidation(ChainIdParams)
-	async swap(@Params('chainId') chainId: number, @Query() payload) {
+	async getSwapData(@Params('chainId') chainId: number, @Query() payload) {
+		return SwapService.getSwapData(chainId, payload)
+	}
+
+	@Post('/')
+	@ParamsValidation(ChainIdParams)
+	@PayloadValidation(SwapPayload)
+	async swap(@Params('chainId') chainId: number, @Payload() payload) {
 		return SwapService.swap(chainId, payload)
 	}
 }

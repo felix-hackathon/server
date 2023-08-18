@@ -25,6 +25,7 @@
 	},
 	"uri1Inch": "https://api.1inch.dev",
 	"apiKey1Inch": [],
+	"callerKeys": [],
 	"redis": {
 		"prefix": "firefly-development",
 		"host": "",
