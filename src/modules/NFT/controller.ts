@@ -11,6 +11,7 @@ export default class AppController {
 			chainId: params.chainId,
 			nftId: params.id,
 			name: 'Test NFT',
+			image: 'https://bafybeigrlckw4a3s5mh2thpv2armmenrnay37yeanvzt4yzflhszpqpkty.ipfs.w3s.link/logo-porsche.png',
 			attributes: [
 				{
 					trait_type: 'Type',
