@@ -19,7 +19,7 @@ export default class AppController {
 					display_type: 'string',
 				},
 			],
-			animation_url: 'https://renderer-nft.vercel.app/',
+			animation_url: `https://nft-klaytn.vercel.app/nft/${params.chainId}/${params.address}/${params.id}`,
 		}
 	}
 }
