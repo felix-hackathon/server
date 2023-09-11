@@ -57,7 +57,7 @@ export default class AppController {
 			name: nft?.name,
 			image: nft?.image,
 			attributes: nft?.attributes || [],
-			...(nft.nftAddress?.toLowerCase() === Config.carAddress
+			...(nft.nftAddress?.toLowerCase() === Config.carAddress?.toLowerCase()
 				? { animation_url: `https://nft-klaytn.vercel.app/nft/${params.chainId}/${params.address}/${params.id}` }
 				: {}),
 		}
