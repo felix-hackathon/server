@@ -6,7 +6,7 @@ const Config = {
 	caliperAddress: '0xE96b1e0C5C89E29Fd2d764244eCF733402584723' as `0x${string}`,
 	rimAddress: '0xF8955cD3aF87eB1fF5356337D27a4D762450Eb39' as `0x${string}`,
 	brakeDiskAddress: '0xb7D35f901d254A94425B61E1728ed17b3FFCBb2F' as `0x${string}`,
-	windShieldAddress: '0x5f0c11d322501De3Ca5A0EA2406429E204B9E6a6' as `0x${string}`,
+	windShieldAddress: '0x1b34813c2dA391B97499a4dDa571621715966B9E' as `0x${string}`,
 	paymentGateway: '0xc08F3a36D2F0609012530011D3c14a4E1cCeC05b' as `0x${string}`,
 	exchangeRouter: '0x5867c40175a45b080abad03f19131cfa9569287b' as `0x${string}`,
 	WKLAY: '0xbb3273dc4cac595afb93559c3aa07e9e6a554fc0' as `0x${string}`,
