@@ -2,6 +2,7 @@ import { Controller, Get, Params, ParamsValidation } from '@/core/decorators'
 import { NFTParams } from './type'
 import NFTModel from '@/models/NFT'
 import Exception from '@/core/exception'
+import Config from './config'
 
 @Controller('/nft', 'App')
 export default class AppController {
@@ -23,7 +24,9 @@ export default class AppController {
 			name: nft?.name,
 			image: nft?.image,
 			attributes: nft?.attributes || [],
-			animation_url: `https://nft-klaytn.vercel.app/nft/${params.chainId}/${params.address}/${params.id}`,
+			...(nft.nftAddress?.toLowerCase() === Config.carAddress
+				? { animation_url: `https://nft-klaytn.vercel.app/nft/${params.chainId}/${params.address}/${params.id}` }
+				: {}),
 		}
 	}
 }
