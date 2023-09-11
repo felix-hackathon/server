@@ -48,7 +48,9 @@ export default class AppController {
 			nftId: params.id,
 		}).lean()
 		if (!nft) {
-			throw Exception.NotFound('NFT not found')
+			return {
+				name: 'Car',
+			}
 		}
 		return {
 			nftAddress: params.address,
