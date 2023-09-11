@@ -31,6 +31,28 @@ export default class NFTService {
 	// 	}
 	// }
 
+	static async handleSaveTBA({ chainId, nftAddress, nftId, tbaAddress }: { nftAddress: string; nftId: string; chainId: number; tbaAddress: string }) {
+		await NFTModel.findOneAndUpdate(
+			{
+				chainId,
+				nftAddress,
+				nftId,
+			},
+			{
+				$set: {
+					chainId,
+					nftAddress,
+					nftId,
+					tbaAddress,
+				},
+			},
+			{
+				new: true,
+				upsert: true,
+			}
+		)
+	}
+
 	static async handleMint({
 		chainId,
 		nftAddress,
@@ -70,6 +92,7 @@ export default class NFTService {
 			}
 		)
 	}
+
 	static getInfoByType({ address, type }: { address: string; type: string }) {
 		const typesCar = [
 			{

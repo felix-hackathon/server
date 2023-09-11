@@ -2,7 +2,7 @@ import Exception from '@/core/exception'
 import AppService from '../App/service'
 import Caver from 'caver-js'
 import AppConfig from '@/core/configs'
-import { NFTAccessoryTopics, NFTCarTopics, ifaceAccessory, ifaceCar } from '@/core/web3/constants'
+import { NFTAccessoryTopics, NFTCarTopics, RegistryTopics, ifaceAccessory, ifaceCar, ifaceRegistry } from '@/core/web3/constants'
 import NFTService from '../NFT/service'
 
 export default class TransactionService {
@@ -44,6 +44,16 @@ export default class TransactionService {
 						to: `${recipient}`.toLowerCase(),
 						txHash: log.transactionHash,
 						type: `${type}`,
+					})
+				} else if (topic === RegistryTopics.AccountCreated) {
+					const decoded = ifaceRegistry.decodeEventLog('AccountCreated', log.data, log.topics)
+					const [account, implementation, cId, tokenContract, tokenId, salt] = decoded
+					console.log(`TBA Address `, { account, implementation, cId, tokenContract, tokenId, salt })
+					await NFTService.handleSaveTBA({
+						chainId: parseInt(`${cId}`),
+						nftAddress: `${tokenContract}`.toLowerCase(),
+						nftId: `${tokenId}`,
+						tbaAddress: `${account}`.toLowerCase(),
 					})
 				}
 			}
