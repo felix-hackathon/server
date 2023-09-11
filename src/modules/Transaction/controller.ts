@@ -8,7 +8,7 @@ export default class TransactionController {
 	@Post('/')
 	@ParamsValidation(ChainIdParams)
 	@PayloadValidation(TxPayload)
-	async swap(@Params() params: ChainIdParams, @Payload() payload: TxPayload) {
+	async call(@Params() params: ChainIdParams, @Payload() payload: TxPayload) {
 		return TransactionService.call(params.chainId, payload.rawTx)
 	}
 }

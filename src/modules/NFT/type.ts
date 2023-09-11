@@ -9,3 +9,11 @@ export class NFTParams {
 	@JoiSchema(Joi.string().required())
 	id: string
 }
+
+export class NFTQuery {
+	@JoiSchema(Joi.number().required())
+	chainId: number
+
+	@JoiSchema(Joi.ethAddress().optional())
+	owner: string
+}
