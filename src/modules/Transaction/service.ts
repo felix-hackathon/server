@@ -26,6 +26,7 @@ export default class TransactionService {
 				if (topic === NFTCarTopics.BaseCollectionMinted) {
 					const decoded = ifaceCar.decodeEventLog('BaseCollectionMinted', log.data, log.topics)
 					const [recipient, type, tokenId] = decoded
+					console.log(recipient, type, tokenId, 'base')
 					await NFTService.handleMint({
 						chainId,
 						nftAddress: log.address.toLowerCase(),
@@ -37,6 +38,7 @@ export default class TransactionService {
 				} else if (topic === NFTAccessoryTopics.AccessoryMinted) {
 					const decoded = ifaceAccessory.decodeEventLog('AccessoryMinted', log.data, log.topics)
 					const [recipient, type, tokenId] = decoded
+					console.log(recipient, type, tokenId, 'part')
 					await NFTService.handleMint({
 						chainId,
 						nftAddress: log.address.toLowerCase(),
