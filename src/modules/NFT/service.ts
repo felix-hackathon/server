@@ -1,35 +1,110 @@
 import NFTModel from '@/models/NFT'
 import Config from './config'
+import { CancelNFTPayload, OfferNFTPayload, RejectOfferPayload, SellNFTPayload } from './type'
+import RequestNFTModel, { RequestNFTStatus, RequestNFTType } from '@/models/RequestNFT'
+import { ethers } from 'ethers'
+import AppService from '../App/service'
+import { NFTAccessoryTopics, NFTCarTopics, RegistryTopics, ifaceAccessory, ifaceCar, ifaceRegistry } from '@/core/web3/constants'
 
 export default class NFTService {
-	// static async handleLogTransfer(log: LogObject, chainId: number) {
-	// 	const decoded = ifaceCar.decodeEventLog('Transfer', log.data, log.topics)
-	// 	const [from, to, tokenId] = decoded
+	static async processLogByHash(chainId: number, txHash: string) {
+		const chains = await AppService.getChains()
+		const chain = await chains.find((i) => i.chainId === chainId)
+		const provider = new ethers.JsonRpcProvider(chain.rpc[0])
+		const receipt = await provider.getTransactionReceipt(txHash)
+		await NFTService.processLogs(chainId, receipt.logs)
+	}
 
-	// 	if (`${from}`?.toLowerCase() === ethers.ZeroAddress) {
-	// 		await NFTService.handleMint({
-	// 			chainId,
-	// 			nftAddress: log.address?.toLowerCase(),
-	// 			nftId: `${tokenId}`,
-	// 			to: `${to}`.toLowerCase(),
-	// 			txHash: log.transactionHash?.toLowerCase(),
-	// 			type: '1',
-	// 		})
-	// 	} else {
-	// 		await NFTModel.updateOne(
-	// 			{
-	// 				chainId,
-	// 				nftAddress: log.address?.toLowerCase(),
-	// 				nftId: `${tokenId}`,
-	// 			},
-	// 			{
-	// 				$set: {
-	// 					owner: `${to}`?.toLowerCase(),
-	// 				},
-	// 			}
-	// 		)
-	// 	}
-	// }
+	static async processLogs(chainId: number, logs: readonly ethers.Log[] | ethers.Log[]) {
+		for (let i = 0; i < logs.length; i++) {
+			const log = logs[i]
+			const topic = log.topics[0]
+			if (topic === NFTCarTopics.BaseCollectionMinted) {
+				const decoded = ifaceCar.decodeEventLog('BaseCollectionMinted', log.data, log.topics)
+				const [recipient, type, tokenId] = decoded
+				console.log(recipient, type, tokenId, 'base')
+				await NFTService.handleMint({
+					chainId,
+					nftAddress: log.address.toLowerCase(),
+					nftId: `${tokenId}`,
+					to: `${recipient}`.toLowerCase(),
+					txHash: log.transactionHash,
+					type: `${type}`,
+				})
+			} else if (topic === NFTAccessoryTopics.AccessoryMinted) {
+				const decoded = ifaceAccessory.decodeEventLog('AccessoryMinted', log.data, log.topics)
+				const [recipient, type, tokenId] = decoded
+				console.log(recipient, type, tokenId, 'part')
+				await NFTService.handleMint({
+					chainId,
+					nftAddress: log.address.toLowerCase(),
+					nftId: `${tokenId}`,
+					to: `${recipient}`.toLowerCase(),
+					txHash: log.transactionHash,
+					type: `${type}`,
+				})
+			} else if (topic === RegistryTopics.AccountCreated) {
+				const decoded = ifaceRegistry.decodeEventLog('AccountCreated', log.data, log.topics)
+				const [account, implementation, cId, tokenContract, tokenId, salt] = decoded
+				console.log(`TBA Address `, { account, implementation, cId, tokenContract, tokenId, salt })
+				await NFTService.handleSaveTBA({
+					chainId: parseInt(`${cId}`),
+					nftAddress: `${tokenContract}`.toLowerCase(),
+					nftId: `${tokenId}`,
+					tbaAddress: `${account}`.toLowerCase(),
+				})
+			}
+			//  else if (topic === ExchangeTopics.OrderExecuted) {
+			// 	const decoded = ifaceExchange.decodeEventLog('OrderExecuted', log.data, log.topics)
+			// 	const [quoteType, orderNonce, collectionType, collection, tokenId, currency, price, seller, recipient] = decoded
+			// 	console.log({
+			// 		quoteType,
+			// 		orderNonce,
+			// 		collectionType,
+			// 		collection,
+			// 		tokenId,
+			// 		currency,
+			// 		price,
+			// 		seller,
+			// 		recipient,
+			// 	})
+			// }
+			else if (topic === NFTCarTopics.Transfer) {
+				const decoded = ifaceCar.decodeEventLog('Transfer', log.data, log.topics)
+				const [from, to, tokenId] = decoded
+				console.log('Transfer', from, to, tokenId)
+				await NFTModel.findOneAndUpdate(
+					{
+						nftAddress: log.address?.toLowerCase(),
+						nftId: tokenId?.toString(),
+						chainId,
+					},
+					{
+						$set: {
+							owner: to?.toLowerCase(),
+						},
+					}
+				)
+				await RequestNFTModel.updateMany(
+					{
+						nftAddress: log?.address?.toLowerCase(),
+						nftId: tokenId?.toString(),
+						chainId,
+						status: RequestNFTStatus.Init,
+					},
+					{
+						$set: {
+							status: RequestNFTStatus.Done,
+							buyerAddress: to?.toLowerCase(),
+							sellerAddress: from?.toLowerCase(),
+							txHash: log.transactionHash,
+						},
+					}
+				)
+			}
+		}
+		console.log('Done')
+	}
 
 	static async handleSaveTBA({ chainId, nftAddress, nftId, tbaAddress }: { nftAddress: string; nftId: string; chainId: number; tbaAddress: string }) {
 		await NFTModel.findOneAndUpdate(
@@ -211,5 +286,79 @@ export default class NFTService {
 
 		const result = types.find((i) => i.address?.toLowerCase() === address.toLowerCase() && i.type === type)
 		return result
+	}
+
+	static async sell(payload: SellNFTPayload) {
+		await RequestNFTModel.updateMany(
+			{
+				chainId: payload.chainId,
+				nftAddress: payload.address.toLowerCase(),
+				nftId: payload.id,
+				status: RequestNFTStatus.Init,
+			},
+			{
+				$set: {
+					status: RequestNFTStatus.Cancel,
+				},
+			}
+		)
+		const requestNFT = await RequestNFTModel.create({
+			chainId: payload.chainId,
+			nftAddress: payload.address.toLowerCase(),
+			nftId: payload.id,
+			priceWei: payload.priceWei,
+			price: parseInt(ethers.formatUnits(payload.priceWei, 18).toString()),
+			signatureSeller: payload.signatureSeller,
+			type: RequestNFTType.Market,
+			sellerAddress: payload.sellerAddress.toLowerCase(),
+			status: RequestNFTStatus.Init,
+		})
+		return requestNFT
+	}
+
+	static async rejectOffer(payload: RejectOfferPayload) {
+		const requestNFT = await RequestNFTModel.findByIdAndUpdate(
+			payload.id,
+			{
+				$set: {
+					status: RequestNFTStatus.Cancel,
+				},
+			},
+			{
+				new: true,
+			}
+		)
+		return requestNFT
+	}
+
+	static async cancel(payload: CancelNFTPayload) {
+		const requestNFT = await RequestNFTModel.updateMany(
+			{
+				chainId: payload.chainId,
+				nftAddress: payload.address.toLowerCase(),
+				nftId: payload.id,
+			},
+			{
+				$set: {
+					status: RequestNFTStatus.Cancel,
+				},
+			}
+		)
+		return requestNFT
+	}
+
+	static async offer(payload: OfferNFTPayload) {
+		const requestNFT = await RequestNFTModel.create({
+			chainId: payload.chainId,
+			nftAddress: payload.address.toLowerCase(),
+			nftId: payload.id,
+			priceWei: payload.priceWei,
+			price: parseInt(ethers.formatUnits(payload.priceWei, 18).toString()),
+			signatureBuyer: payload.signatureBuyer,
+			buyerAddress: payload.buyerAddress,
+			type: RequestNFTType.Offer,
+			status: RequestNFTStatus.Init,
+		})
+		return requestNFT
 	}
 }

@@ -6,12 +6,81 @@ export const ifaceCar = Interface.from(carABI)
 
 export const NFTCarTopics = {
 	BaseCollectionMinted: ifaceCar.getEvent('BaseCollectionMinted').topicHash,
+	Transfer: ifaceCar.getEvent('Transfer').topicHash,
 }
 
 export const ifaceAccessory = Interface.from(accessoryABI)
 
 export const NFTAccessoryTopics = {
 	AccessoryMinted: ifaceAccessory.getEvent('AccessoryMinted').topicHash,
+}
+
+export const ifaceExchange = Interface.from([
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'enum QuoteType',
+				name: 'quoteType',
+				type: 'uint8',
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'orderNonce',
+				type: 'uint256',
+			},
+			{
+				indexed: false,
+				internalType: 'enum CollectionType',
+				name: 'collectionType',
+				type: 'uint8',
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'collection',
+				type: 'address',
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'tokenId',
+				type: 'uint256',
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'currency',
+				type: 'address',
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'price',
+				type: 'uint256',
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'seller',
+				type: 'address',
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'recipient',
+				type: 'address',
+			},
+		],
+		name: 'OrderExecuted',
+		type: 'event',
+	},
+])
+
+export const ExchangeTopics = {
+	OrderExecuted: ifaceExchange.getEvent('OrderExecuted').topicHash,
 }
 
 export const ifaceRegistry = Interface.from([

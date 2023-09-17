@@ -17,7 +17,7 @@
 		"dev": "rm -rf dist && yarn dev:tsc & (sleep 10 && yarn dev:serve)",
 		"build": "rm -rf dist && tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
 		"start": "node --es-module-specifier-resolution=node dist/main.js",
-		"start:listen": "node --es-module-specifier-resolution=node  dist/listen.js",
+		"start:seed": "node --es-module-specifier-resolution=node  dist/seed.js",
 		"prepare": "husky install"
 	},
 	"dependencies": {

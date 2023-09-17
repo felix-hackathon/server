@@ -2,8 +2,8 @@ import Exception from '@/core/exception'
 import AppService from '../App/service'
 import Caver from 'caver-js'
 import AppConfig from '@/core/configs'
-import { NFTAccessoryTopics, NFTCarTopics, RegistryTopics, ifaceAccessory, ifaceCar, ifaceRegistry } from '@/core/web3/constants'
 import NFTService from '../NFT/service'
+import { sleep } from '@/core/utils'
 
 export default class TransactionService {
 	static async call(chainId: number, rawTx: string) {
@@ -19,48 +19,8 @@ export default class TransactionService {
 				senderRawTransaction: rawTx,
 				feePayer: '0xDF61031025A0f177314c10eB4bddF35B9E9bddd0',
 			})
-
-			if (res?.logs) {
-				for (let i = 0; i < res.logs.length; i++) {
-					const log = res.logs[i]
-					const topic = log.topics?.[0]
-					if (topic === NFTCarTopics.BaseCollectionMinted) {
-						const decoded = ifaceCar.decodeEventLog('BaseCollectionMinted', log.data, log.topics)
-						const [recipient, type, tokenId] = decoded
-						console.log(recipient, type, tokenId, 'base')
-						await NFTService.handleMint({
-							chainId,
-							nftAddress: log.address.toLowerCase(),
-							nftId: `${tokenId}`,
-							to: `${recipient}`.toLowerCase(),
-							txHash: log.transactionHash,
-							type: `${type}`,
-						})
-					} else if (topic === NFTAccessoryTopics.AccessoryMinted) {
-						const decoded = ifaceAccessory.decodeEventLog('AccessoryMinted', log.data, log.topics)
-						const [recipient, type, tokenId] = decoded
-						console.log(recipient, type, tokenId, 'part')
-						await NFTService.handleMint({
-							chainId,
-							nftAddress: log.address.toLowerCase(),
-							nftId: `${tokenId}`,
-							to: `${recipient}`.toLowerCase(),
-							txHash: log.transactionHash,
-							type: `${type}`,
-						})
-					} else if (topic === RegistryTopics.AccountCreated) {
-						const decoded = ifaceRegistry.decodeEventLog('AccountCreated', log.data, log.topics)
-						const [account, implementation, cId, tokenContract, tokenId, salt] = decoded
-						console.log(`TBA Address `, { account, implementation, cId, tokenContract, tokenId, salt })
-						await NFTService.handleSaveTBA({
-							chainId: parseInt(`${cId}`),
-							nftAddress: `${tokenContract}`.toLowerCase(),
-							nftId: `${tokenId}`,
-							tbaAddress: `${account}`.toLowerCase(),
-						})
-					}
-				}
-			}
+			await sleep(1000)
+			await NFTService.processLogByHash(chainId, res.transactionHash)
 			return res
 		} catch (error) {
 			console.log(error)
