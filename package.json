@@ -67,6 +67,7 @@
 		"sharp": "^0.32.1",
 		"snarkjs": "^0.6.10",
 		"typescript": "^5.0.4",
+		"viem": "^1.10.14",
 		"ws": "^8.13.0"
 	},
 	"devDependencies": {

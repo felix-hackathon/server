@@ -5,6 +5,8 @@ import RequestNFTModel, { RequestNFTStatus, RequestNFTType } from '@/models/Requ
 import { ethers } from 'ethers'
 import AppService from '../App/service'
 import { NFTAccessoryTopics, NFTCarTopics, RegistryTopics, ifaceAccessory, ifaceCar, ifaceRegistry } from '@/core/web3/constants'
+import { decodeEventLog } from 'viem'
+import carABI from '@/core/web3/carAbi'
 
 export default class NFTService {
 	static async processLogByHash(chainId: number, txHash: string) {
@@ -70,37 +72,50 @@ export default class NFTService {
 			// 	})
 			// }
 			else if (topic === NFTCarTopics.Transfer) {
-				const decoded = ifaceCar.decodeEventLog('Transfer', log.data, log.topics)
-				const [from, to, tokenId] = decoded
-				console.log('Transfer', from, to, tokenId)
-				await NFTModel.findOneAndUpdate(
-					{
-						nftAddress: log.address?.toLowerCase(),
-						nftId: tokenId?.toString(),
-						chainId,
-					},
-					{
-						$set: {
-							owner: to?.toLowerCase(),
+				// const decoded = ifaceCar.decodeEventLog('Transfer', log.data, log.topics)
+				try {
+					const decoded = decodeEventLog({
+						abi: carABI,
+						topics: log.topics as any,
+						data: log.data as any,
+						strict: true,
+					})
+					const { args } = decoded
+					const from = (args as any)?.from
+					const to = (args as any)?.to
+					const tokenId = (args as any)?.tokenId
+					console.log('Transfer', from, to, tokenId)
+					await NFTModel.findOneAndUpdate(
+						{
+							nftAddress: log.address?.toLowerCase(),
+							nftId: tokenId?.toString(),
+							chainId,
 						},
-					}
-				)
-				await RequestNFTModel.updateMany(
-					{
-						nftAddress: log?.address?.toLowerCase(),
-						nftId: tokenId?.toString(),
-						chainId,
-						status: RequestNFTStatus.Init,
-					},
-					{
-						$set: {
-							status: RequestNFTStatus.Done,
-							buyerAddress: to?.toLowerCase(),
-							sellerAddress: from?.toLowerCase(),
-							txHash: log.transactionHash,
+						{
+							$set: {
+								owner: to?.toLowerCase(),
+							},
+						}
+					)
+					await RequestNFTModel.updateMany(
+						{
+							nftAddress: log?.address?.toLowerCase(),
+							nftId: tokenId?.toString(),
+							chainId,
+							status: RequestNFTStatus.Init,
 						},
-					}
-				)
+						{
+							$set: {
+								status: RequestNFTStatus.Done,
+								buyerAddress: to?.toLowerCase(),
+								sellerAddress: from?.toLowerCase(),
+								txHash: log.transactionHash,
+							},
+						}
+					)
+				} catch (error) {
+					console.log(error, 'error')
+				}
 			}
 		}
 		console.log('Done')
